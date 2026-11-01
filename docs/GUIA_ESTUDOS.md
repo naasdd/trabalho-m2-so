@@ -15,6 +15,7 @@
 | 5 | Simulando o exemplo 7.2 à mão, passo a passo no código | 7 min |
 | 6 | Testes, experimentos e números para decorar | 5 min |
 | 7 | Perguntas prováveis da defesa | 5 min |
+| 8 | Como operar o sistema no terminal | 5 min |
 
 ---
 
@@ -629,3 +630,101 @@ casos do `executarUmTick`. Os testes conferem isso, e nas 28 execuções a soma 
 - A substituição é só global.
 - Não há prioridade nem envelhecimento.
 - Uma única carga por cenário.
+
+---
+
+## 8. Como operar o sistema no terminal (5 min)
+
+### Compilar (uma vez, ou depois de mexer no código)
+
+```bash
+cd ~/Documents/GitHub/trabalho-m2-so
+make
+```
+
+Isso gera o executável `simulador`. No Windows, use `mingw32-make`.
+
+### Rodar uma simulação
+
+Só com o arquivo, o resto fica no padrão (1 CPU, FCFS, LRU, 256 quadros, troca 1):
+
+```bash
+./simulador --arquivo cenarios/cenario_A_t0.json
+```
+
+Com tudo explícito:
+
+```bash
+./simulador --arquivo cenarios/cenario_B_espacadas.json --cpus 4 --sched rr --quantum 10 --subst lru --quadros 256 --custo-troca 1
+```
+
+| Argumento | O que muda | Valores |
+|---|---|---|
+| `--arquivo` | qual carga | `cenarios/cenario_A_t0.json` ou `cenarios/cenario_B_espacadas.json` |
+| `--cpus` | quantos núcleos | `1` ou `4` |
+| `--sched` | escalonador | `fcfs`, `sjf`, `rr` |
+| `--quantum` | fatia do RR (os outros escalonadores ignoram) | ex.: `2`, `10`, `50` |
+| `--subst` | substituição de página | `fifo` ou `lru` |
+| `--quadros` | tamanho da memória | ex.: `32`, `256`, `1024` |
+| `--custo-troca` | custo da troca de contexto | ex.: `0`, `1`, `5` |
+| `--log` | gera o `log.txt` | (sem valor) |
+
+A ordem dos argumentos não importa. Se algum estiver errado, o programa mostra o erro e a ajuda.
+Para ver a ajuda: `./simulador --ajuda`.
+
+### Ler a saída
+
+A tela mostra 4 blocos:
+
+- **PARAMETROS:** o que foi escolhido. Mostre isso ao professor para provar que o parâmetro mudou.
+- **METRICAS GLOBAIS:** espera média e máxima, turnaround, resposta, makespan, trocas, page faults e taxa de faults.
+- **POR CPU:** útil, troca e ocioso de cada CPU.
+- **POR CLASSE:** curtos × longos (justiça e starvation).
+
+O Gantt de 0 a 200 é salvo em `gantt.csv` (veja com `cat gantt.csv`).
+
+### Log de estados
+
+Use um exemplo pequeno, que gera um log fácil de ler:
+
+```bash
+./simulador --arquivo testes/ex_7_2.json --custo-troca 0 --custo-fault 5 --log
+cat log.txt
+```
+
+Com 1000 processos, limite o log até um instante (o completo tem centenas de MB):
+
+```bash
+./simulador --arquivo cenarios/cenario_A_t0.json --log --log-ate 100
+head -60 log.txt
+```
+
+### Provar que está correto
+
+```bash
+make teste
+```
+
+Tem que aparecer "15 de 15 testes passaram".
+
+### Speedup (precisa de duas execuções)
+
+```bash
+./simulador --arquivo cenarios/cenario_B_espacadas.json --cpus 1 --sched fcfs | grep makespan
+./simulador --arquivo cenarios/cenario_B_espacadas.json --cpus 4 --sched fcfs | grep makespan
+```
+
+Divida os dois makespans: 65795 ÷ 13567 = 4,85. A tabela completa está em `resultados/speedup.csv`.
+
+### Refazer todos os experimentos
+
+```bash
+make experimentos   # ~15 s, refaz os CSVs em resultados/
+make graficos       # refaz as figuras (precisa: pip3 install matplotlib)
+```
+
+### Roteiro para a defesa
+
+1. `make` e depois `make teste`: mostra que compila e que bate com o enunciado.
+2. Rode o que o professor pedir, trocando só os argumentos.
+3. Se ele duvidar de alguma regra, rode o 7.2 com `--log` e mostre o `log.txt` instante a instante (seção 5 deste guia).
