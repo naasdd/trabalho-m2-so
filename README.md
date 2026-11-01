@@ -90,6 +90,14 @@ make graficos         # gera resultados/figuras/*.png
 
 Os resultados são determinísticos: rodar de novo gera exatamente os mesmos números.
 
+## Documentos
+
+| Arquivo | Conteúdo |
+|---|---|
+| [`docs/Relatorio_M2_SO.pdf`](docs/Relatorio_M2_SO.pdf) | Relatório (ABNT) com fundamentação, implementação, resultados e análise |
+| [`docs/GUIA_ESTUDOS.md`](docs/GUIA_ESTUDOS.md) | Guia de estudos: conceitos e code review guiado para a defesa |
+| [`docs/enunciado-m2.pdf`](docs/enunciado-m2.pdf) | Enunciado do trabalho |
+
 ## Organização do código
 
 | Arquivo | O que faz |

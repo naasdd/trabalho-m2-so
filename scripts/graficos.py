@@ -231,31 +231,42 @@ def figura_gantt(nome_execucao, titulo):
         trechos = list(csv.DictReader(arquivo))
 
     num_cpus = max(int(t["cpu"]) for t in trechos) + 1
-    fig, eixo = plt.subplots(figsize=(16, 1.1 + 0.8 * num_cpus))
 
-    for t in trechos:
-        cpu = int(t["cpu"])
-        inicio = int(t["inicio"])
-        duracao = int(t["fim"]) - inicio
-        evento = t["evento"]
-        if evento == "TROCA":
-            cor = "#404040"
-        elif evento == "OCIOSA":
-            cor = "#f0f0f0"
-        else:
-            cor = cor_do_processo(int(evento[1:]))
-        eixo.broken_barh([(inicio, duracao)], (cpu - 0.4, 0.8), facecolors=cor, edgecolor="white", linewidth=0.4)
-        if evento.startswith("P") and duracao >= 4:
-            eixo.text(inicio + duracao / 2, cpu, evento, ha="center", va="center", fontsize=7)
+    # dois paineis (0 a 100 e 100 a 200) para caber legivel numa pagina
+    fig, eixos = plt.subplots(2, 1, figsize=(12, 2.2 + 1.3 * num_cpus))
 
-    eixo.set_yticks(range(num_cpus))
-    eixo.set_yticklabels([f"CPU {c}" for c in range(num_cpus)])
-    eixo.invert_yaxis()
-    eixo.set_xlim(0, 200)
-    eixo.set_xticks(range(0, 201, 10))
-    eixo.set_xlabel("tempo")
-    eixo.set_title(titulo + "   (cinza escuro = TROCA, cinza claro = OCIOSA)")
-    eixo.grid(axis="x", alpha=0.3)
+    for painel, eixo in enumerate(eixos):
+        comeco = painel * 100
+        fim = comeco + 100
+        for t in trechos:
+            cpu = int(t["cpu"])
+            inicio = int(t["inicio"])
+            duracao = int(t["fim"]) - inicio
+            evento = t["evento"]
+            if evento == "TROCA":
+                cor = "#404040"
+            elif evento == "OCIOSA":
+                cor = "#f0f0f0"
+            else:
+                cor = cor_do_processo(int(evento[1:]))
+            eixo.broken_barh([(inicio, duracao)], (cpu - 0.4, 0.8), facecolors=cor, edgecolor="white", linewidth=0.5)
+
+            # escreve o pid se o trecho for largo o bastante dentro deste painel
+            visivel = min(inicio + duracao, fim) - max(inicio, comeco)
+            if evento.startswith("P") and visivel >= 2:
+                meio = (max(inicio, comeco) + min(inicio + duracao, fim)) / 2
+                eixo.text(meio, cpu, evento, ha="center", va="center", fontsize=6 if visivel < 4 else 7)
+
+        eixo.set_yticks(range(num_cpus))
+        eixo.set_yticklabels([f"CPU {c}" for c in range(num_cpus)])
+        eixo.invert_yaxis()
+        eixo.set_xlim(comeco, fim)
+        eixo.set_xticks(range(comeco, fim + 1, 5))
+        eixo.tick_params(axis="x", labelsize=8)
+        eixo.grid(axis="x", alpha=0.3)
+
+    eixos[0].set_title(titulo + "\n(cinza escuro = TROCA, cinza claro = OCIOSA)", fontsize=10)
+    eixos[1].set_xlabel("tempo")
     salvar(f"gantt_{nome_execucao}.png")
 
 
